@@ -66,3 +66,9 @@ Get-Mailbox -Archive -ResultSize Unlimited | Get-MailboxStatistics -Archive | Se
 
 Get-Mailbox paul | Select *quota paul | Select *quota
 
+Get-MailboxFolderPermission -Identity sue@profit.com:\Calendar
+Get-MailboxFolderPermission -Identity simon.xie@compprac.com.au:\Calendar
+Set-MailboxFolderPermission -Identity sue@profit.com:\Calendar -User "Mike Simpson" -AccessRights author
+Set-MailboxFolderPermission -Identity sue@profit.com:\Calendar -User "Default" -AccessRights reviewer
+
+Set-CalendarProcessing -Identity "Sue" -ResourceDelegates "mike@profit.com"
