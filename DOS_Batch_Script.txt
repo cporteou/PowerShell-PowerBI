@@ -1,0 +1,15 @@
+
+
+@%SystemRoot%\system32\ping.exe -n 15 www.google.com >> c:\temp\test_result.txt
+
+@%SystemRoot%\system32\ping.exe -n 15 www.fktpeak.com.au >> c:\temp\test_result.txt
+
+@%SystemRoot%\system32\ping.exe -n 5 203.0.178.191 >> c:\temp\test_result.txt
+
+@%SystemRoot%\system32\ping.exe -n 5 192.168.0.3 >> c:\temp\test_result.txt
+
+@%SystemRoot%\system32\ping.exe -n 5 fp-pronto >> c:\temp\test_result.txt
+
+@%SystemRoot%\system32\ping.exe -n 5 192.168.0.10 >> c:\temp\test_result.txt
+
+@%SystemRoot%\system32\ping.exe -n 5 192.168.0.15 >> c:\temp\test_result.txt
