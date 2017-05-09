@@ -1,0 +1,103 @@
+#change ccpadmin password
+
+$comp=hostname
+
+("WINNT://"+$comp+"/ccpadmin").SetPassword("********")
+
+#get local exchange database size, run 'windows powershell modules' as administrator,
+
+Get-MailboxDatabase -Status | select ServerName,Name,DatabaseSize
+
+
+#get windows running services list
+
+Get-Service | where {$_.Status -eq "Running"} | Export-Csv -path "C:\temp\Running_services.csv"
+
+
+#get error log info
+
+Get-EventLog application -newest 200 | Where-Object {$_.EntryType -eq "Error"} | Format-List
+Get-EventLog system -newest 200 | Where-Object {$_.EntryType -eq "Error"} | fl
+
+Get-EventLog "Windows PowerShell" -newest 200| Where-Object {$_.EntryType -eq "Error"}
+
+Get-EventLog -LogName System -EntryType Error
+
+Get-EventLog -LogName System -Source "DCOM" -newest 10 | Where-Object {$_.EntryType -eq "Error"}|Format-List >> "d:\temp\powershell_output.txt"
+
+Get-EventLog application -newest 200 | Where-Object {$_.EntryType -eq "Error"}|Format-List > "d:\temp\powershell_output.txt"
+Get-EventLog system -newest 200 | Where-Object {$_.EntryType -eq "Error"}|Format-List >> "d:\temp\powershell_output.txt"
+Get-EventLog "Windows PowerShell" -newest 200| Where-Object {$_.EntryType -eq "Error"}|Format-List >> "d:\temp\powershell_output.txt"
+
+
+#get free disk space info
+$month=Get-Date -UFormat %Y%m
+$computer_id=(Get-WmiObject -Class Win32_ComputerSystem -Property Name).Name
+Get-WmiObject -Class Win32_LogicalDisk -ComputerName $computer_id | 
+Where-Object {$_.DriveType -eq 3} |
+Select-Object DeviceID, Description,
+    @{"Label"="Server_Name";"Expression"={"{0:N}" -f ($computer_id)}},
+    @{"Label"="DiskSize(GB)";"Expression"={"{0:N}" -f ($_.Size/1GB) -as [float]}},
+    @{"Label"="FreeSpace(GB)";"Expression"={"{0:N}" -f ($_.FreeSpace/1GB) -as [float]}},
+    @{"Label"="FreeSpace(%)";"Expression"={"{0:N}" -f ($_.FreeSpace/$_.Size*100) -as [float]}},
+    @{"Label"="Year and Month";"Expression"={"{0:N}" -f ($month) -as [float]}} |
+ Export-CSV -path C:\powershell\$($computer_id)_DiskSpaceUsage.csv -noType -Append
+
+
+# Exchange
+get-mailbox | get-mailboxstatistics | ft displayname, totalitemsize
+
+Get-Mailbox -ResultSize Unlimited | Get-MailboxStatistics | Select DisplayName, @{name="TotalItemSize (MB)"; expression={[math]::Round( ($_.TotalItemSize.ToString().Split("(")[1].Split(" ")[0].Replace(",","")/1MB),2)}}, ItemCount | Sort "TotalItemSize (MB)" -Descending 
+
+Get-MailboxStatistics sue | Format-List StorageLimitStatus,TotalItemSize,TotalDeletedItemSize,ItemCount,DeletedItemCount
+
+Get-Mailbox -ResultSize Unlimited | Get-MailboxStatistics | Select DisplayName,StorageLimitStatus,@{name="TotalItemSize (MB)";expression={[math]::Round((($_.TotalItemSize.Value.ToString()).Split("(")[1].Split(" ")[0].Replace(",","")/1MB),2)}},@{name="TotalDeletedItemSize (MB)";expression={[math]::Round((($_.TotalDeletedItemSize.Value.ToString()).Split("(")[1].Split(" ")[0].Replace(",","")/1MB),2)}},ItemCount,DeletedItemCount | Sort "TotalItemSize (MB)" -Descending | Export-CSV "C:\All_Mailboxes.csv" -NoTypeInformation
+
+Get-Mailbox -ResultSize Unlimited | Get-MailboxStatistics | where {$_.StorageLimitStatus -notlike "BelowLimit*"} | Select DisplayName,StorageLimitStatus,@{name="TotalItemSize (MB)";expression={[math]::Round((($_.TotalItemSize.Value.ToString()).Split("(")[1].Split(" ")[0].Replace(",","")/1MB),2)}},@{name="TotalDeletedItemSize (MB)";expression={[math]::Round((($_.TotalDeletedItemSize.Value.ToString()).Split("(")[1].Split(" ")[0].Replace(",","")/1MB),2)}},ItemCount,DeletedItemCount | Sort "TotalItemSize (MB)" -Descending | Export-CSV "C:\Exceeded_Quotas.csv" -NoTypeInformation
+
+Get-Mailbox paul | Format-List *Quota
+
+Get-Mailbox -Archive -ResultSize Unlimited | Get-MailboxStatistics -Archive | Select DisplayName,StorageLimitStatus,@{name="TotalItemSize (MB)";expression={[math]::Round((($_.TotalItemSize.Value.ToString()).Split("(")[1].Split(" ")[0].Replace(",","")/1MB),2)}},@{name="TotalDeletedItemSize (MB)";expression={[math]::Round((($_.TotalDeletedItemSize.Value.ToString()).Split("(")[1].Split(" ")[0].Replace(",","")/1MB),2)}},ItemCount,DeletedItemCount | Sort "TotalItemSize (MB)" -Descending | Export-Csv "C:\All_Archive_Mailboxes.csv" -NoTypeInformation
+
+Get-Mailbox paul | Select *quota paul | Select *quota
+
+# manage Exchange online:
+# prepare for remote connection
+Set-ExecutionPolicy RemoteSigned
+
+$UserCredential = Get-Credential
+$Session = New-PSSession -ConfigurationName Microsoft.Exchange -ConnectionUri https://ps.outlook.com/powershell -Credential $UserCredential -Authentication Basic -AllowRedirection
+
+Import-PSSession $Session
+get-mailbox
+get-calendarprocessing -id "FKT Meeting Calendar" |fl
+
+Set-CalendarProcessing -Identity "FKT Meeting Calendar" -AllowConflicts:$True
+Set-CalendarProcessing -Identity "FKT Meeting Calendar" -ConflictPercentageAllowed:100   # The valid range is from 0 to 100
+Set-CalendarProcessing -Identity "FKT Meeting Calendar" -MaximumConflictInstances:10
+get-calendarprocessing -id "MKT Meeting Calendar" |fl
+
+# end remote session
+remove-pssession $session
+
+# setting up boardroom calendars 
+Set-CalendarProcessing -Identity "boardroom" -AllowConflicts:$True
+Set-CalendarProcessing -Identity "boardroom" -AllowConflicts:$False
+
+Set-CalendarProcessing -Identity "boardroom" -ConflictPercentageAllowed:100   # The valid range is from 0 to 100
+Set-CalendarProcessing -Identity "boardroom" -MaximumConflictInstances:10
+get-calendarprocessing -id "FKT Meeting Calendar" |fl
+ 
+
+New-Mailbox -Alias boardroom -Name boardroom -FirstName boardroom -LastName boardroom -DisplayName "boardroom" -MicrosoftOnlineServicesID boardroom@fktresources.com -Password (ConvertTo-SecureString -String 'Fudo08254' -AsPlainText -Force) -ResetPasswordOnNextLogon $false
+* mailbox boardroom@fktresources.com does not need to be assigned a licence, because it is just a boardroom. 
+
+Set-Mailbox boardroom -Type Regular/ Room / Equipment / Shared
+
+Get-MailboxFolderPermission -Identity sue@fktresources.com:\Calendar
+# grant other user's access rights to user sue's calendar
+Set-MailboxFolderPermission -Identity sue@fktresources.com:\Calendar -User "Mike Simpson" -AccessRights author
+
+
+
+
