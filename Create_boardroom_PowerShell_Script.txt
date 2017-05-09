@@ -1,0 +1,68 @@
+Create a boardroom calendar on Exchange online:
+
+Logon to office 365 using admin user
+Create a public folder mailbox if you do not already have one.
+Create a root public folder
+manage folder permissions: add users/onwers and permissions.
+
+
+run powershell as administrator
+
+Set-ExecutionPolicy RemoteSigned
+ 
+$UserCredential = Get-Credential
+$Session = New-PSSession -ConfigurationName Microsoft.Exchange -ConnectionUri https://ps.outlook.com/powershell -Credential $UserCredential -Authentication Basic -AllowRedirection
+ 
+Import-PSSession $Session
+get-mailbox
+
+New-Mailbox -Alias boardroom -Name boardroom -FirstName boardroom -LastName boardroom -DisplayName "boardroom" -MicrosoftOnlineServicesID boardroom@fktresources.com -Password (ConvertTo-SecureString -String 'Fudo0854' -AsPlainText -Force) -ResetPasswordOnNextLogon $false
+Set-Mailbox boardroom -Type Room
+# mailbox boardroom@fktresources.com does not need to be assigned a licence because it is just a room.
+
+get-calendarprocessing -id "FKT Meeting Calendar" |fl
+ 
+Set-CalendarProcessing -Identity "boardroom" -AllowConflicts:$True
+
+Set-CalendarProcessing -Identity "boardroom" -AllowConflicts:$False
+Set-CalendarProcessing -Identity "boardroom" -ConflictPercentageAllowed:100   # The valid range is from 0 to 100
+Set-CalendarProcessing -Identity "boardroom" -MaximumConflictInstances:10
+
+get-calendarprocessing -id "FKT Meeting Calendar" |fl
+ 
+remove-pssession $session
+
+Set-Mailbox boardroom -Type Regular/ Room / Equipment / Shared
+
+on user end, set up outlook, add calendars, add rooms from rooms list, done.
+
+
+
+
+#get exchange database size, run 'windows powershell modules' as administrator,
+
+Get-MailboxDatabase -Status | select ServerName,Name,DatabaseSize
+
+
+#get services list
+
+Get-Service | where {$_.Status -eq "Running"} | Export-Csv -path "C:\temp\services.csv"
+
+
+
+get-mailbox | get-mailboxstatistics | ft displayname, totalitemsize
+
+Get-Mailbox -ResultSize Unlimited | Get-MailboxStatistics | Select DisplayName, @{name="TotalItemSize (MB)"; expression={[math]::Round( ($_.TotalItemSize.ToString().Split("(")[1].Split(" ")[0].Replace(",","")/1MB),2)}}, ItemCount | Sort "TotalItemSize (MB)" -Descending 
+
+Get-MailboxStatistics sue | Format-List StorageLimitStatus,TotalItemSize,TotalDeletedItemSize,ItemCount,DeletedItemCount
+
+Get-Mailbox -ResultSize Unlimited | Get-MailboxStatistics | Select DisplayName,StorageLimitStatus,@{name="TotalItemSize (MB)";expression={[math]::Round((($_.TotalItemSize.Value.ToString()).Split("(")[1].Split(" ")[0].Replace(",","")/1MB),2)}},@{name="TotalDeletedItemSize (MB)";expression={[math]::Round((($_.TotalDeletedItemSize.Value.ToString()).Split("(")[1].Split(" ")[0].Replace(",","")/1MB),2)}},ItemCount,DeletedItemCount | Sort "TotalItemSize (MB)" -Descending | Export-CSV "C:\All_Mailboxes.csv" -NoTypeInformation
+
+Get-Mailbox -ResultSize Unlimited | Get-MailboxStatistics | where {$_.StorageLimitStatus -notlike "BelowLimit*"} | Select DisplayName,StorageLimitStatus,@{name="TotalItemSize (MB)";expression={[math]::Round((($_.TotalItemSize.Value.ToString()).Split("(")[1].Split(" ")[0].Replace(",","")/1MB),2)}},@{name="TotalDeletedItemSize (MB)";expression={[math]::Round((($_.TotalDeletedItemSize.Value.ToString()).Split("(")[1].Split(" ")[0].Replace(",","")/1MB),2)}},ItemCount,DeletedItemCount | Sort "TotalItemSize (MB)" -Descending | Export-CSV "C:\Exceeded_Quotas.csv" -NoTypeInformation
+
+Get-Mailbox paul | Format-List *Quota
+
+Get-Mailbox -Archive -ResultSize Unlimited | Get-MailboxStatistics -Archive | Select DisplayName,StorageLimitStatus,@{name="TotalItemSize (MB)";expression={[math]::Round((($_.TotalItemSize.Value.ToString()).Split("(")[1].Split(" ")[0].Replace(",","")/1MB),2)}},@{name="TotalDeletedItemSize (MB)";expression={[math]::Round((($_.TotalDeletedItemSize.Value.ToString()).Split("(")[1].Split(" ")[0].Replace(",","")/1MB),2)}},ItemCount,DeletedItemCount | Sort "TotalItemSize (MB)" -Descending | Export-Csv "C:\All_Archive_Mailboxes.csv" -NoTypeInformation
+
+Get-Mailbox paul | Select *quota paul | Select *quota
+
