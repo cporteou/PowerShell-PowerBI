@@ -1,4 +1,6 @@
 
+:: create this file in notepad, save as *.bat
+:: add this file to scheduled task
 
 @%SystemRoot%\system32\ping.exe -n 15 www.google.com >> c:\temp\test_result.txt
 
