@@ -1,0 +1,8 @@
+
+excel -- > data --> from web --> basic :
+URL: https://api.workflowmax.com/time.api/list?apiKey=xxxx&accountKey=yyyy&from=20150101&to=20151231
+
+--> edit with power query
+
+
+
