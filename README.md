@@ -6,7 +6,7 @@ This script will allow the user to turn all Azure VMs ON or OFF via an automatio
 
 ### Prerequisites
 1. Install the Azure Resource Manager modules from the PowerShell Gallery
-Install-Module AzureRM
+**Install-Module AzureRM**
 2. Reference the Azure Automation Connections info
 https://docs.microsoft.com/en-us/azure/automation/automation-connections
 
@@ -16,4 +16,4 @@ This script will allow the user to turn all Azure VMs ON or OFF & prompts for us
 
 ### Prerequisites
 1. Install the Azure Resource Manager modules from the PowerShell Gallery
-Install-Module AzureRM
+**Install-Module AzureRM**
