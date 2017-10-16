@@ -3,7 +3,7 @@ workflow StartStopVMGroup01
 $Conn = Get-AutomationConnection -Name 'AzureRunAsConnection'
 Add-AzureRMAccount -ServicePrincipal -Tenant $Conn.TenantID `
 -ApplicationId $Conn.ApplicationID -CertificateThumbprint $Conn.CertificateThumbprint
-Get-automationConnection
+
 
 $StrCredentialName = "cpadmincredential" 
 $StrMessageTo = @("simon.xie@comprac.com.au", "greenspanx@hotmail.com")      
